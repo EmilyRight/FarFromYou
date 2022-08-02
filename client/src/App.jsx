@@ -5,18 +5,17 @@ import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRouter/PrivateRouter';
 import UserList from './components/UserList/UserList';
 import UserDetail from './components/UserDetail/UserDetail';
-import UserEdit from './components/UserEdit/UserEdit';
+// import UserEdit from './components/UserEdit/UserEdit';
 import SignOut from './components/Forms/SignOut/SignOut';
 import Nav from './components/Nav/Nav';
 import SignUp from './components/Forms/SignUp/SignUp';
 import SignIn from './components/Forms/SignIn/SignIn';
 import { checkAuth } from './redux/actions/userAction';
 import Main from './components/Main/Main';
-import Track from './components/Track/Track';
+// import Track from './components/Track/Track';
 import PersonalArea from './components/PersonalArea/PersonalArea';
 import CreateRoom from './components/CreateRoom/CreateRoom';
 import Room from './components/CreateRoom/Room';
-
 import Join from './components/Join/Join';
 import Footr from './components/Footr/Footr';
 
@@ -38,8 +37,8 @@ function App() {
         <Route path="/user/PA" element={<PrivateRoute><PersonalArea /></PrivateRoute>} />
         <Route path="/auth/signup" element={<SignUp />} />
         <Route path="/auth/signin" element={<SignIn />} />
+        <Route path="/room/:id" element={<Room />} />
         <Route path="/createroom" element={<CreateRoom />} />
-        <Route path="/room" element={<Room />} />
         <Route path="/join" element={<Join />} />
       </Routes>
       <Footr />

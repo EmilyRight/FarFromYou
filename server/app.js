@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path'); // Dima
 
 // sign
 const { Server } = require('socket.io');
@@ -12,6 +13,8 @@ const cors = require('cors');
 const welcomeRouter = require('./src/routes/welcome.router');
 const authRouter = require('./src/routes/auth.router');
 const usersRouter = require('./src/routes/users.router');
+const roomRouter = require('./src/routes/room.router');
+const audioRouter = require('./src/routes/audio.router');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,8 +45,6 @@ const corsOptions = {
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
   credentials: true,
 };
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions)); // app.use(cors(corsOptions));
 
 // sign
@@ -52,8 +53,10 @@ const { COOKIE_SECRET, COOKIE_NAME } = process.env;
 app.set('cookieName', COOKIE_NAME);
 
 // app.use(cors(corsOptions));
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ extended: true })); // Dima extended: true
+app.use('/audio', express.static(path.join(__dirname, 'audio'))); // Dima
+app.use('/api', require('./routes/upload.route')); // Dima
 
 // sign
 app.use(
@@ -71,9 +74,17 @@ app.use(
   }),
 );
 app.use('/', welcomeRouter);
+app.use('/room', roomRouter);
+app.use('/audio', audioRouter);
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
 
+// socket-chat - test
+const rooms = new Map();
+app.get('/room', (req, res) => {
+  rooms.set('hello', '');
+  res.json(rooms);
+});
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -84,12 +95,34 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
   console.log(`User connected ${socket.id}`);
+  io.emit('message', 'User 111 connected');
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
-  // socket.on('send_message', (data) => {
-  //   console.log(data);
-  // });
+  // сообщения
+
+  socket.on('send_message', (msg) => {
+    io.emit('recieve_message', msg);
+  });
+
+  // гости
+  socket.on('joinRoom', ({ name, roomID }) => {
+    socket.join(roomID);
+    console.log(roomID);
+    // Welcome current user
+    socket.emit('message', 'Welcome to ChatCord!');
+
+    // Broadcast when a user connects
+    socket.broadcast
+      .to(roomID)
+      .emit('message', `${name} has joined the chat`);
+
+    // Send users and room info
+    // io.to(roomID).emit('roomUsers', {
+    //   room: roomID,
+    //   users: getRoomUsers(user.room),
+    // });
+  });
 });
 
 server.listen(PORT, () => console.log('Server has been started on port 3001'));

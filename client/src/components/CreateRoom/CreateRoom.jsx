@@ -1,80 +1,61 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import Track from '../Track/Track';
-import './CreateRoom.css';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 function CreateRoom() {
   const [input, setInput] = useState({});
+  const [userall, setUserall] = useState([]);
+  const [guest, setGuest] = useState({ id: '' });
+  const navigate = useNavigate();
+  const user = useSelector((state) => (state.user));
 
   useEffect(() => {
     fetch('http://localhost:3001/createroom', {
       credentials: 'include',
     })
       .then((res) => (res.json()))
-      .then((date) => console.log(date));
+      .then((date) => setUserall(date));
   }, []);
 
+  const valueHandle = (e) => {
+    setGuest((prev) => ({ ...prev, id: e.target.value }));
+  };
   const inputHandler = (e) => {
     setInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-  return (
-    <>
-      <div>
-        <input
-          value={input.name || ''}
-          onChange={inputHandler}
-          name="name"
-          type="text"
-          placeholder="name"
-          className="input input-bordered
-        input-md w-full max-w-xs"
-        />
-        <div className="form-control">
-          <div className="input-group">
-            <button type="button" className="btn btn-primary">Добвить гостя</button>
-            <button type="button" className="btn btn-primary">Информация</button>
+
+  const createHandler = async () => {
+    const response = await fetch('http://localhost:3001/createroom', {
+      credentials: 'include',
+      method: 'POST',
+      headers: { 'Content-type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (response.ok) {
+      const result = await response.json();
+      console.log(result);
+      navigate(`/room/${result.id}`);
+    }
+  };
+
+  // console.log(guest);
+  if (user) {
+    return (
+      <form>
+        <div className="card w-96 bg-base-100 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title">Enter room name</h2>
+            <input name="name" type="text" placeholder="name" value={input.name || ''} onChange={inputHandler} className="input select-bordered" id="exampleInputEmail1" aria-describedby="emailHelp" />
+            <div className="card-actions justify-end">
+              <button type="button" onClick={createHandler} className="btn btn-primary">Create a room</button>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th />
-              <th>Name</th>
-              <th>Job</th>
-              <th>Favorite Color</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>1</th>
-              <td>Cy Ganderton</td>
-              <td>Quality Control Specialist</td>
-              <td>Blue</td>
-            </tr>
-            <tr>
-              <th>2</th>
-              <td>Hart Hagerty</td>
-              <td>Desktop Support Technician</td>
-              <td>Purple</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <ul>
-        <li className="nav-item">
-          <NavLink
-            to="/room"
-            className="nav-link"
-          >
-            Кабинет
-          </NavLink>
-        </li>
-      </ul>
-    </>
+      </form>
+    );
+  } return (
+    <div>You not auth</div>
   );
 }
 
