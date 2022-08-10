@@ -36,10 +36,12 @@ function GuestsInfo({ nameCreater, nemeRoom }) {
     navigate('/');
   };
 
-  socket.on('joinRoom', (users) => {
-    setArrGuest(users.data);
-    console.log(users);
-  });
+  useEffect(() => {
+    socket.on('joinRoom', (users) => {
+      setArrGuest(users.data);
+      console.log(users);
+    });
+  }, [socket]);
 
   if (nameCreater) {
     return (

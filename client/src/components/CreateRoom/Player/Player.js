@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, {
+  useEffect, useState, useRef, useCallback,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { getAudioThunk, getAudioAC } from '../../../redux/actions/audioActions';
@@ -10,23 +12,26 @@ function Player({ nameCreater }) {
   const user = useSelector((state) => (state.user));
 
   const dispatch = useDispatch();
-
   const clientAudio = new Audio();
-  clientAudio.addEventListener('canplaythrough', (event) => {});
+  clientAudio.pause();
+  clientAudio.addEventListener('loadeddata', (event) => {});
 
   let adminStop = false;
   function clientAudioStop() {
     clientAudio.pause();
     adminStop = false;
+    clientAudio.src = null;
+    clientAudio.currentTime = null;
   }
   const roomId = useParams();
 
   useEffect(() => {
+    clientAudio.pause();
     dispatch(getAudioThunk(roomId.id));
   }, []);
 
   function showTime(m) {
-    console.log('client timeCode', m);
+    console.log(m);
     if (user?.userName !== nameCreater) {
       clientAudio.pause();
       clientAudio.src = m.path;
@@ -37,7 +42,7 @@ function Player({ nameCreater }) {
 
   let stopCheck = true;
   const audio = new Audio();
-  audio.addEventListener('canplaythrough', (event) => {});
+  audio.addEventListener('loadeddata', (event) => {});
 
   function adminPlay(m) {
     let i = 0;
@@ -48,6 +53,7 @@ function Player({ nameCreater }) {
       audio.play();
       setInterval(() => {
         if (audio.paused && stopCheck) {
+          console.log('in if admin');
           // eslint-disable-next-line no-plusplus
           ++i;
           if (i > m.length - 1) {
@@ -57,7 +63,6 @@ function Player({ nameCreater }) {
           currentPlay = m[i][0];
           audio.src = currentPlay;
           audio.play();
-          console.log(m, 'lkjadfkajsdfksdg');
           socket.emit('next', { timecode: audio.currentTime, path: currentPlay });
         }
         if (!audio.paused) {
@@ -70,15 +75,19 @@ function Player({ nameCreater }) {
   function tracksForAll() {
     dispatch(getAudioThunk(roomId.id));
   }
-  socket.on('time', showTime);
-  socket.on('next', showTime);
+  useEffect(() => {
+    socket.on('next', showTime);
+  }, [socket]);
+  useEffect(() => {
+    socket.on('time', showTime);
+  }, [socket]);
   socket.on('stop', clientAudioStop);
   socket.on('tracksForAll', tracksForAll);
 
-  // function handleAudioNext() {
-  //   audio.pause();
-  // }
-  const handleAudioNext = useDebounce(() => audio.pause(), 200);
+  const handleAudioNext = useDebounce(() => {
+    console.log('in next');
+    audio.pause();
+  }, 200);
 
   function handleAudioStop() {
     stopCheck = false;
@@ -90,25 +99,29 @@ function Player({ nameCreater }) {
     socket.emit('time', { }); // При загрузке пользователь получает таймкод и адрес
   }, []);
 
-  const handleTimecode = useDebounce(() => socket.emit('time', { }), 200);
+  const handleTimecode = useDebounce(() => socket.emit('time', {}), 200);
 
-  function handlePlaySound() {
+  const handlePlaySound = useDebounce(() => {
     stopCheck = true;
     adminPlay(audioFromServer);
-  }
+  }, 200);
+
+  // function handlePlaySound() {
+  //   stopCheck = true;
+  //   adminPlay(audioFromServer);
+  // }
 
   return (
     <div className="player-btn-group">
       {user.userName !== nameCreater
     && <button type="button" className="btn player-btn" onClick={handleTimecode}>Start</button>}
-      {user?.userName === nameCreater
-    && (
-    <>
-      <button type="button" className="btn player-btn" onClick={handlePlaySound}>Start</button>
-      <button type="button" className="btn player-btn" onClick={handleAudioNext}>Next</button>
-      <button type="button" className="btn player-btn" onClick={handleAudioStop}>Stop</button>
-    </>
-    )}
+      {user?.userName === nameCreater && (
+        <>
+          <button type="button" className="btn player-btn" onClick={handlePlaySound}>Start</button>
+          <button type="button" className="btn player-btn" onClick={handleAudioNext}>Next</button>
+          <button type="button" className="btn player-btn" onClick={handleAudioStop}>Stop</button>
+        </>
+      )}
     </div>
 
   );

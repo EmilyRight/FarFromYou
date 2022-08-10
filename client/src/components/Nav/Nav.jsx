@@ -1,9 +1,9 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, NavLink } from 'react-router-dom';
 import './Nav.css';
 
-function Nav() {
+function Nav(stopLogout) {
   const user = useSelector((state) => state.user);
 
   return (
